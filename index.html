@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🎵 Beat Tap!</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100vw;
+      height: 80vh;
+      background: radial-gradient(circle, #333 0%, #000 100%);
+      overflow: hidden;
+    }
+
+    .circle {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #00d0ff;
+      transform: scale(0.5);
+      opacity: 0.7;
+      transition: transform 0.2s, opacity 0.2s;
+      cursor: pointer;
+    }
+
+    #score, #combo, #misses {
+      font-size: 24px;
+      margin: 5px 0;
+    }
+
+    .hit {
+      transform: scale(1.2);
+      opacity: 1;
+      background-color: lime;
+    }
+
+    .miss {
+      background-color: red;
+    }
+
+    #startBtn {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      background-color: #6c5ce7;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #startBtn:hover {
+      background-color: #a29bfe;
+    }
+
+    #gameOverMsg {
+      font-size: 36px;
+      color: #ff7675;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎵 Beat Tap!</h1>
+  <button id="startBtn">게임 시작</button>
+  <p id="score">점수: 0</p>
+  <p id="combo">콤보: 0</p>
+  <p id="misses">실수: 0 / 10</p>
+  <div id="gameArea"></div>
+  <div id="gameOverMsg"></div>
+
+  <!-- 🎧 배경음악 (무료 MP3) -->
+  <audio id="bgMusic" preload="auto" loop>
+    <source src="https://cdn.pixabay.com/audio/2023/03/01/audio_5fae2b2c84.mp3" type="audio/mpeg">
+    브라우저가 오디오를 지원하지 않아요 😢
+  </audio>
+
+  <!-- 효과음 -->
+  <audio id="tapSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const scoreDisplay = document.getElementById("score");
+    const comboDisplay = document.getElementById("combo");
+    const missDisplay = document.getElementById("misses");
+    const gameOverMsg = document.getElementById("gameOverMsg");
+    const tapSound = document.getElementById("tapSound");
+    const bgMusic = document.getElementById("bgMusic");
+
+    let score = 0;
+    let combo = 0;
+    let misses = 0;
+    let interval;
+    let gameStarted = false;
+    let gameOver = false;
+
+    function spawnCircle() {
+      if (gameOver) return;
+
+      const circle = document.createElement("div");
+      circle.classList.add("circle");
+
+      const maxX = gameArea.clientWidth - 80;
+      const maxY = gameArea.clientHeight - 80;
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      circle.style.left = `${x}px`;
+      circle.style.top = `${y}px`;
+
+      gameArea.appendChild(circle);
+
+      let hit = false;
+
+      circle.addEventListener("click", () => {
+        if (!hit) {
+          hit = true;
+          circle.classList.add("hit");
+          tapSound.currentTime = 0;
+          tapSound.play();
+          score += 10 + combo * 2;
+          combo++;
+          updateUI();
+          setTimeout(() => gameArea.removeChild(circle), 200);
+        }
+      });
+
+      setTimeout(() => {
+        if (!hit) {
+          circle.classList.add("miss");
+          misses++;
+          combo = 0;
+          updateUI();
+          setTimeout(() => {
+            if (gameArea.contains(circle)) {
+              gameArea.removeChild(circle);
+            }
+          }, 200);
+          if (misses >= 10) {
+            endGame();
+          }
+        }
+      }, 1000);
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = `점수: ${score}`;
+      comboDisplay.textContent = `콤보: ${combo}`;
+      missDisplay.textContent = `실수: ${misses} / 10`;
+    }
+
+    function endGame() {
+      clearInterval(interval);
+      gameOver = true;
+      gameOverMsg.innerText = "😵 게임 오버! 새로고침으로 다시 시작하세요.";
+      bgMusic.pause();
+    }
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+
+      // 배경음 재생
+      bgMusic.volume = 0.6;
+      bgMusic.play().then(() => {
+        console.log("배경음악 재생 성공 🎶");
+      }).catch(err => {
+        console.error("배경음악 재생 실패 😢", err);
+        alert("⚠️ 브라우저가 자동 재생을 막고 있어요.\n다시 버튼을 눌러보세요!");
+      });
+
+      // 게임 시작
+      interval = setInterval(spawnCircle, 1200);
+    }
+
+    document.getElementById("startBtn").addEventListener("click", startGame);
+  </script>
+</body>
+</html>
